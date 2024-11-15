@@ -1,0 +1,108 @@
+<!-- Sidebar Navigation -->
+<aside class="sidebar" id="sidebar">
+    <!-- Logo Area -->
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">📦</div>
+            <div>
+                <h2>Inventory</h2>
+                <% if (typeof currentUser !=='undefined' && currentUser) { %>
+                    <div class="sidebar-shop-name">
+                        <%= currentUser.shopName %>
+                    </div>
+                    <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="sidebar-nav">
+        <!-- Main Section -->
+        <div class="sidebar-nav-section">
+            <div class="sidebar-nav-label">Main</div>
+            <ul>
+                <li>
+                    <a href="/dashboard"
+                        class="<%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
+                        <span class="nav-icon">🏠</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/products"
+                        class="<%= typeof activePage !== 'undefined' && activePage === 'products' ? 'active' : '' %>">
+                        <span class="nav-icon">📦</span>
+                        <span>Inventory</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/categories"
+                        class="<%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>">
+                        <span class="nav-icon">🏷️</span>
+                        <span>Categories</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/pos"
+                        class="<%= typeof activePage !== 'undefined' && activePage === 'pos' ? 'active' : '' %>">
+                        <span class="nav-icon">🛒</span>
+                        <span>Point of Sale</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Team Section (Owner Only) -->
+        <% if (typeof currentUser !=='undefined' && currentUser?.role==='owner' ) { %>
+            <div class="sidebar-nav-section">
+                <div class="sidebar-nav-label">Team</div>
+                <ul>
+                    <li>
+                        <a href="/team"
+                            class="<%= typeof activePage !== 'undefined' && activePage === 'team' ? 'active' : '' %>">
+                            <span class="nav-icon">👥</span>
+                            <span>Team Members</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <% } %>
+
+                <!-- Settings Section -->
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-label">Settings</div>
+                    <ul>
+                        <li>
+                            <a href="/settings"
+                                class="<%= typeof activePage !== 'undefined' && activePage === 'settings' ? 'active' : '' %>">
+                                <span class="nav-icon">⚙️</span>
+                                <span>Shop Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+    </nav>
+
+    <!-- User Profile (Bottom) -->
+    <div class="sidebar-footer">
+        <% if (typeof currentUser !=='undefined' && currentUser) { %>
+            <div class="sidebar-user">
+                <div class="sidebar-user-avatar">
+                    <%= currentUser.email.charAt(0).toUpperCase() %>
+                </div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name">
+                        <%= currentUser.email.split('@')[0] %>
+                    </div>
+                    <div class="sidebar-user-role">
+                        <%= currentUser.role %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+                <a href="/auth/logout" class="sidebar-logout-btn">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+    </div>
+</aside>

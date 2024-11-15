@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Inventory Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <%- include('sidebar') %>
+        <div class="main-content">
+            <%- include('topbar') %>
+            <main class="page-container">
+                <!-- Flash Messages -->
+                <% if (typeof success_msg !== 'undefined' && success_msg) { %>
+                    <div class="alert alert-success">
+                        <span>✓</span>
+                        <%= success_msg %>
+                        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                <% } %>
+                <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+                    <div class="alert alert-danger">
+                        <span>✕</span>
+                        <%= error_msg %>
+                        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                <% } %>
