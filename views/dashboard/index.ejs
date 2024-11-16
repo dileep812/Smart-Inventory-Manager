@@ -1,0 +1,194 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Title -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>Dashboard Overview</h1>
+            <p>Welcome back<%= currentUser ? ', ' + currentUser.email.split('@')[0] : '' %>! Here's your inventory
+                    overview.</p>
+        </div>
+        <div class="page-header-actions">
+            <% if (typeof currentUser !=='undefined' && ['owner', 'manager' ].includes(currentUser.role)) { %>
+                <a href="/products/new" class="btn btn-primary">+ Add Product</a>
+                <% } %>
+        </div>
+    </div>
+
+    <% if (stats.lowStockCount> 0) { %>
+        <div class="alert alert-warning" style="margin-bottom: var(--space-6);">
+            <span>⚠️</span>
+            <strong>
+                <%= stats.lowStockCount %>
+            </strong> product<%= stats.lowStockCount> 1 ? 's' : '' %> running low on stock
+                <a href="/products?filter=lowstock" class="btn btn-sm btn-warning" style="margin-left: auto;">View Low
+                    Stock</a>
+        </div>
+        <% } %>
+
+            <!-- KPI Section: 4 Column Grid -->
+            <div class="kpi-grid">
+                <!-- Total Products -->
+                <div class="kpi-card">
+                    <div class="kpi-icon blue">📦</div>
+                    <div class="kpi-content">
+                        <div class="kpi-value">
+                            <%= stats.totalProducts %>
+                        </div>
+                        <div class="kpi-label">Total Products</div>
+                    </div>
+                </div>
+
+                <!-- Total Value -->
+                <div class="kpi-card">
+                    <div class="kpi-icon green">💰</div>
+                    <div class="kpi-content">
+                        <div class="kpi-value">$<%= stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2,
+                                maximumFractionDigits: 2 }) %>
+                        </div>
+                        <div class="kpi-label">Inventory Value</div>
+                    </div>
+                </div>
+
+                <!-- Low Stock -->
+                <div class="kpi-card <%= stats.lowStockCount > 0 ? 'warning' : '' %>">
+                    <div class="kpi-icon <%= stats.lowStockCount > 0 ? 'red' : 'gray' %>">⚠️</div>
+                    <div class="kpi-content">
+                        <div class="kpi-value">
+                            <%= stats.lowStockCount %>
+                        </div>
+                        <div class="kpi-label">Low Stock</div>
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div class="kpi-card">
+                    <div class="kpi-icon purple">🏷️</div>
+                    <div class="kpi-content">
+                        <div class="kpi-value">
+                            <%= stats.totalCategories %>
+                        </div>
+                        <div class="kpi-label">Categories</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section: 2 Column Grid -->
+            <div class="charts-grid">
+                <!-- Stock Trends Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📈 Stock Trends</h3>
+                        <div class="card-header-actions">
+                            <select id="stockTrendsDays" class="form-select form-select-sm" style="width: auto;">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30">Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🕐 Recent Activity</h3>
+                        <a href="/stock-history" class="btn btn-ghost btn-sm">View All</a>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <% if (recentActivity && recentActivity.length> 0) { %>
+                            <table class="styled-table compact">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Change</th>
+                                        <th>Reason</th>
+                                        <th>When</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% recentActivity.forEach(activity=> { %>
+                                        <tr>
+                                            <td>
+                                                <span class="product-name-sm">
+                                                    <%= activity.product_name || 'Unknown' %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% if (activity.quantity_change> 0) { %>
+                                                    <span class="badge badge-success">+<%= activity.quantity_change %>
+                                                    </span>
+                                                    <% } else { %>
+                                                        <span class="badge badge-danger">
+                                                            <%= activity.quantity_change %>
+                                                        </span>
+                                                        <% } %>
+                                            </td>
+                                            <td>
+                                                <span class="category-tag">
+                                                    <%= activity.reason %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted text-sm">
+                                                    <%= new Date(activity.created_at).toLocaleDateString() %>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                </tbody>
+                            </table>
+                            <% } else { %>
+                                <ul class="activity-list">
+                                    <li class="activity-item">
+                                        <div class="activity-icon green">✓</div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">System Ready</div>
+                                            <div class="activity-meta">No stock movements yet</div>
+                                        </div>
+                                        <div class="activity-time">Now</div>
+                                    </li>
+                                    <% if (stats.totalProducts===0 && typeof currentUser !=='undefined' &&
+                                        ['owner', 'manager' ].includes(currentUser.role)) { %>
+                                        <li class="activity-item empty">
+                                            <div class="activity-content" style="text-align: center; padding: 2rem;">
+                                                <p style="color: var(--text-muted);">Add products to see activity here
+                                                </p>
+                                                <a href="/products/new" class="btn btn-outline btn-sm"
+                                                    style="margin-top: 0.5rem;">+ Add First Product</a>
+                                            </div>
+                                        </li>
+                                        <% } %>
+                                </ul>
+                                <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Row -->
+            <div class="quick-actions-grid">
+                <% if (typeof currentUser !=='undefined' && ['owner', 'manager' ].includes(currentUser.role)) { %>
+                    <a href="/products/new" class="quick-action-card">
+                        <span class="quick-action-icon">📥</span>
+                        <span class="quick-action-label">Add Product</span>
+                    </a>
+                    <% } %>
+                        <a href="/categories" class="quick-action-card">
+                            <span class="quick-action-icon">🏷️</span>
+                            <span class="quick-action-label">Categories</span>
+                        </a>
+                        <a href="/products" class="quick-action-card">
+                            <span class="quick-action-icon">📦</span>
+                            <span class="quick-action-label">View Inventory</span>
+                        </a>
+                        <a href="/dashboard" class="quick-action-card">
+                            <span class="quick-action-icon">🏠</span>
+                            <span class="quick-action-label">Dashboard</span>
+                        </a>
+            </div>
+
+            <%- include('../partials/footer') %>
