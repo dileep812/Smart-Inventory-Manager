@@ -1,0 +1,125 @@
+<%- include('../partials/header') %>
+
+    <!-- Header Section -->
+    <div class="flex-between mb-6">
+        <div>
+            <h1>Categories</h1>
+            <p class="text-muted">Organize your products with categories</p>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (typeof error !=='undefined' && error) { %>
+        <div class="alert alert-danger mb-4">
+            <span>✕</span>
+            <%= error %>
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+        <% } %>
+            <% if (typeof success !=='undefined' && success) { %>
+                <div class="alert alert-success mb-4">
+                    <span>✓</span>
+                    <%= success %>
+                        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+                <% } %>
+
+                    <!-- Two Column Layout -->
+                    <div class="grid-2">
+                        <!-- LEFT COLUMN: Add Category Form (Owners & Managers only) -->
+                        <% if (typeof currentUser !=='undefined' && ['owner', 'manager' ].includes(currentUser.role)) {
+                            %>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>➕ Add New Category</h3>
+                                </div>
+                                <div class="card-body">
+                                    <form action="/categories" method="POST">
+                                        <div class="form-group">
+                                            <label class="form-label" for="name">
+                                                Category Name <span class="required">*</span>
+                                            </label>
+                                            <input type="text" id="name" name="name" class="form-input"
+                                                placeholder="e.g., Electronics, Clothing, Food" required autofocus>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            ➕ Add Category
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <% } %>
+
+                                <!-- RIGHT COLUMN: Categories List -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3>📁 Your Categories</h3>
+                                        <span class="badge badge-secondary">
+                                            <%= categories.length %> total
+                                        </span>
+                                    </div>
+
+                                    <% if (categories.length===0) { %>
+                                        <div class="card-body">
+                                            <div class="empty-state-sm">
+                                                <p class="text-muted">No categories yet.
+                                                    <% if (typeof currentUser !=='undefined' && ['owner', 'manager'
+                                                        ].includes(currentUser.role)) { %>
+                                                        Create your first one!
+                                                        <% } %>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <% } else { %>
+                                            <div class="table-responsive">
+                                                <table class="styled-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Name</th>
+                                                            <th>Created</th>
+                                                            <% if (typeof currentUser !=='undefined' &&
+                                                                ['owner', 'manager' ].includes(currentUser.role)) { %>
+                                                                <th class="text-right">Actions</th>
+                                                                <% } %>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% categories.forEach(category=> { %>
+                                                            <tr>
+                                                                <td>
+                                                                    <span class="category-tag">
+                                                                        <%= category.name %>
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="text-muted text-sm">
+                                                                        <%= new
+                                                                            Date(category.created_at).toLocaleDateString()
+                                                                            %>
+                                                                    </span>
+                                                                </td>
+                                                                <% if (typeof currentUser !=='undefined' &&
+                                                                    ['owner', 'manager' ].includes(currentUser.role)) {
+                                                                    %>
+                                                                    <td class="text-right">
+                                                                        <form
+                                                                            action="/categories/<%= category.id %>?_method=DELETE"
+                                                                            method="POST" class="inline-form">
+                                                                            <button type="submit"
+                                                                                class="btn btn-sm btn-danger"
+                                                                                title="Delete">
+                                                                                🗑️ Delete
+                                                                            </button>
+                                                                        </form>
+                                                                    </td>
+                                                                    <% } %>
+                                                            </tr>
+                                                            <% }) %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <% } %>
+                                </div>
+                    </div>
+
+                    <%- include('../partials/footer') %>
