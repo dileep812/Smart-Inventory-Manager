@@ -1,0 +1,103 @@
+<%- include('../partials/header') %>
+
+<!-- Header Section -->
+<div class="flex-between mb-6">
+    <div>
+        <h1>📊 Stock History</h1>
+        <p class="text-muted"><%= product.name %> (SKU: <%= product.sku %>)</p>
+    </div>
+    <div>
+        <a href="/products" class="btn btn-secondary">← Back to Products</a>
+    </div>
+</div>
+
+<!-- Current Stock Card -->
+<div class="card mb-6">
+    <div class="card-body">
+        <div class="flex-between">
+            <div>
+                <h3>Current Stock Level</h3>
+                <p class="text-muted">Real-time inventory count</p>
+            </div>
+            <div class="stock-display">
+                <span class="stock-number"><%= product.stock_quantity %></span>
+                <span class="text-muted">units</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Movement History -->
+<div class="card">
+    <div class="card-header">
+        <h3>📋 Movement History</h3>
+        <span class="badge badge-secondary">Last 20 movements</span>
+    </div>
+    
+    <% if (movements.length === 0) { %>
+        <div class="card-body">
+            <div class="empty-state-sm">
+                <p class="text-muted">No stock movements recorded yet.</p>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="table-responsive">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Change</th>
+                        <th>Reason</th>
+                        <th>User</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% movements.forEach(movement => { %>
+                        <tr>
+                            <td>
+                                <span class="text-sm">
+                                    <%= new Date(movement.created_at).toLocaleString() %>
+                                </span>
+                            </td>
+                            <td>
+                                <% if (movement.quantity_change > 0) { %>
+                                    <span class="badge badge-success">+<%= movement.quantity_change %></span>
+                                <% } else { %>
+                                    <span class="badge badge-danger"><%= movement.quantity_change %></span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="category-tag"><%= movement.reason %></span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-muted">
+                                    <%= movement.user_email || 'System' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-muted">
+                                    <%= movement.notes || '—' %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</div>
+
+<style>
+.stock-display {
+    text-align: center;
+}
+.stock-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary);
+    display: block;
+}
+</style>
+
+<%- include('../partials/footer') %>
