@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point of Sale - Smart Inventory Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="app-layout">
+        <%- include('../partials/sidebar') %>
+
+            <!-- Main Content Area - No page-container wrapper for POS -->
+            <div class="main-content pos-main">
+                <%- include('../partials/topbar') %>
+
+                    <!-- POS Container - Full Height Layout -->
+                    <div class="pos-container">
+                        <!-- Left: Product Grid -->
+                        <div class="pos-products">
+                            <!-- Sticky Search Bar -->
+                            <div class="pos-search-sticky">
+                                <div class="pos-search-bar">
+                                    <span class="pos-search-icon">🔍</span>
+                                    <input type="text" id="productSearch" placeholder="Search products..." autofocus>
+                                </div>
+                                <div class="pos-product-count">
+                                    <span id="productCount">
+                                        <%= products.length %>
+                                    </span> products available
+                                </div>
+                            </div>
+
+                            <!-- Product Grid -->
+                            <% if (products.length===0) { %>
+                                <div class="pos-empty">
+                                    <div class="pos-empty-icon">📦</div>
+                                    <h3>No products in stock</h3>
+                                    <p>Add products with available stock to start selling</p>
+                                    <a href="/products/new" class="btn btn-primary">+ Add Product</a>
+                                </div>
+                                <% } else { %>
+                                    <div class="pos-grid" id="productGrid">
+                                        <% products.forEach(product=> { %>
+                                            <div class="pos-card" data-id="<%= product.id %>"
+                                                data-name="<%= product.name %>" data-price="<%= product.price %>"
+                                                data-stock="<%= product.stock_quantity %>" onclick="addToCart(this)">
+                                                <div class="pos-img-wrapper">
+                                                    <% if (product.image_url) { %>
+                                                        <% if (product.image_url.startsWith('http')) { %>
+                                                            <img src="<%= product.image_url %>"
+                                                                alt="<%= product.name %>"
+                                                                onerror="this.src='/images/default-product.png'; this.onerror=null;">
+                                                            <% } else { %>
+                                                                <img src="/uploads/products/<%= product.image_url %>"
+                                                                    alt="<%= product.name %>"
+                                                                    onerror="this.src='/images/default-product.png'; this.onerror=null;">
+                                                                <% } %>
+                                                                    <% } else { %>
+                                                                        <div class="pos-img-placeholder">📦</div>
+                                                                        <% } %>
+                                                </div>
+                                                <div class="pos-card-body">
+                                                    <div class="pos-card-name">
+                                                        <%= product.name %>
+                                                    </div>
+                                                    <div class="pos-card-meta">
+                                                        <span class="pos-card-price">$<%=
+                                                                parseFloat(product.price).toFixed(2) %></span>
+                                                        <span class="pos-card-stock">
+                                                            <%= product.stock_quantity %> left
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <% }); %>
+                                    </div>
+                                    <% } %>
+                        </div>
+
+                        <!-- Right: Cart (Fixed) -->
+                        <div class="pos-cart">
+                            <div class="pos-cart-header">
+                                <h2>🧾 Current Order</h2>
+                                <button class="pos-clear-btn" onclick="clearCart()" title="Clear All">🗑️</button>
+                            </div>
+
+                            <!-- Cart Items (Scrollable) -->
+                            <div class="pos-cart-items" id="cartItems">
+                                <div class="pos-cart-empty">
+                                    <span>🛒</span>
+                                    <p>Your cart is empty</p>
+                                    <small>Tap products to add them</small>
+                                </div>
+                            </div>
+
+                            <!-- Cart Footer (Fixed at Bottom) -->
+                            <div class="pos-cart-footer">
+                                <div class="pos-totals">
+                                    <div class="pos-total-row">
+                                        <span>Subtotal</span>
+                                        <span id="subtotal">$0.00</span>
+                                    </div>
+                                    <div class="pos-total-row">
+                                        <span>Tax (<%= taxRate %>%)</span>
+                                        <span id="tax">$0.00</span>
+                                    </div>
+                                    <div class="pos-total-row pos-grand-total">
+                                        <span>Total</span>
+                                        <span id="grandTotal">$0.00</span>
+                                    </div>
+                                </div>
+                                <button class="pos-pay-btn" id="payBtn" onclick="checkout()" disabled>
+                                    💳 Pay Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+    </div>
+
+    <!-- Success Modal -->
+    <dialog id="receiptModal" class="pos-modal">
+        <div class="pos-modal-content">
+            <div class="pos-modal-header">
+                <span class="pos-modal-icon">✅</span>
+                <h3>Payment Successful!</h3>
+            </div>
+            <div class="pos-modal-body" id="receiptContent"></div>
+            <div class="pos-modal-footer">
+                <button class="btn btn-primary btn-lg" onclick="newSale()">Start New Sale</button>
+            </div>
+        </div>
+    </dialog>
+
+    <style>
+        /* Override for POS page - no padding on main content */
+        .pos-main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* POS Container - Full Height */
+        .pos-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+
+        /* Left: Product Grid */
+        .pos-products {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pos-search-sticky {
+            background: var(--bg-secondary);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        .pos-search-bar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 0 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .pos-search-icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+
+        .pos-search-bar input {
+            flex: 1;
+            border: none;
+            padding: 0.875rem 0;
+            font-size: 1rem;
+            outline: none;
+            background: transparent;
+        }
+
+        .pos-product-count {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Product Grid */
+        .pos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 0 1.5rem 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+            align-content: start;
+        }
+
+        /* Product Card */
+        .pos-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 2px solid transparent;
+            height: fit-content;
+        }
+
+        .pos-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary);
+        }
+
+        .pos-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Image Wrapper - Fixed Aspect Ratio */
+        .pos-img-wrapper {
+            aspect-ratio: 1 / 1;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pos-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 8px;
+            background: #f8f9fa;
+        }
+
+        .pos-img-placeholder {
+            font-size: 2.5rem;
+            opacity: 0.5;
+        }
+
+        .pos-card-body {
+            padding: 0.75rem;
+        }
+
+        .pos-card-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.5rem;
+        }
+
+        .pos-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pos-card-price {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary);
+        }
+
+        .pos-card-stock {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        /* Right: Cart */
+        .pos-cart {
+            width: 360px;
+            background: white;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .pos-cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .pos-cart-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .pos-clear-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .pos-clear-btn:hover {
+            opacity: 1;
+        }
+
+        /* Cart Items - Scrollable */
+        .pos-cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.25rem;
+        }
+
+        .pos-cart-empty {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 1rem;
+        }
+
+        .pos-cart-empty span {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .pos-cart-empty p {
+            margin: 0 0 0.25rem;
+            font-weight: 500;
+        }
+
+        .pos-cart-empty small {
+            font-size: 0.75rem;
+        }
+
+        /* Cart Item */
+        .pos-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .pos-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pos-item-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pos-item-price {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .pos-item-qty {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .pos-qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .pos-qty-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pos-item-qty span {
+            min-width: 24px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .pos-item-total {
+            font-weight: 700;
+            font-size: 0.9rem;
+            min-width: 55px;
+            text-align: right;
+        }
+
+        .pos-item-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.2rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .pos-item-remove:hover {
+            opacity: 1;
+        }
+
+        /* Cart Footer - Fixed */
+        .pos-cart-footer {
+            border-top: 2px solid var(--border-color);
+            padding: 1.25rem;
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .pos-totals {
+            margin-bottom: 1rem;
+        }
+
+        .pos-total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+        }
+
+        .pos-grand-total {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-top: 2px dashed var(--border-color);
+            padding-top: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .pos-pay-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .pos-pay-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .pos-pay-btn:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Empty State */
+        .pos-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .pos-empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Modal */
+        .pos-modal {
+            border: none;
+            border-radius: 16px;
+            padding: 0;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+        }
+
+        .pos-modal::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .pos-modal-content {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .pos-modal-header {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .pos-modal-icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .pos-modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .pos-modal-body {
+            padding: 1.25rem;
+        }
+
+        .pos-modal-footer {
+            padding: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pos-modal-footer button {
+            width: 100%;
+        }
+
+        .receipt-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 0.9rem;
+        }
+
+        .receipt-total {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+            border-top: 2px solid var(--border-color);
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+
+    <script>
+        const TAX_RATE = <%= taxRate %> / 100;
+        let cart = [];
+
+        // Search
+        document.getElementById('productSearch').addEventListener('input', function (e) {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.pos-card');
+            let visible = 0;
+
+            cards.forEach(card => {
+                const name = card.dataset.name.toLowerCase();
+                const show = name.includes(term);
+                card.style.display = show ? 'block' : 'none';
+                if (show) visible++;
+            });
+
+            document.getElementById('productCount').textContent = visible;
+        });
+
+        function addToCart(el) {
+            const id = parseInt(el.dataset.id);
+            const name = el.dataset.name;
+            const price = parseFloat(el.dataset.price);
+            const stock = parseInt(el.dataset.stock);
+
+            const existing = cart.find(i => i.id === id);
+
+            if (existing) {
+                if (existing.qty >= stock) {
+                    alert(`Stock limit reached for ${name}`);
+                    return;
+                }
+                existing.qty++;
+            } else {
+                cart.push({ id, name, price, stock, qty: 1 });
+            }
+
+            renderCart();
+        }
+
+        function updateQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (!item) return;
+
+            item.qty += delta;
+
+            if (item.qty <= 0) {
+                cart = cart.filter(i => i.id !== id);
+            } else if (item.qty > item.stock) {
+                item.qty = item.stock;
+            }
+
+            renderCart();
+        }
+
+        function removeItem(id) {
+            cart = cart.filter(i => i.id !== id);
+            renderCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const payBtn = document.getElementById('payBtn');
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="pos-cart-empty">
+                        <span>🛒</span>
+                        <p>Your cart is empty</p>
+                        <small>Tap products to add them</small>
+                    </div>
+                `;
+                payBtn.disabled = true;
+            } else {
+                container.innerHTML = cart.map(item => `
+                    <div class="pos-item">
+                        <div class="pos-item-info">
+                            <div class="pos-item-name">${item.name}</div>
+                            <div class="pos-item-price">$${item.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="pos-item-qty">
+                            <button class="pos-qty-btn" onclick="updateQty(${item.id}, -1)">−</button>
+                            <span>${item.qty}</span>
+                            <button class="pos-qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                        </div>
+                        <div class="pos-item-total">$${(item.price * item.qty).toFixed(2)}</div>
+                        <button class="pos-item-remove" onclick="removeItem(${item.id})">×</button>
+                    </div>
+                `).join('');
+                payBtn.disabled = false;
+            }
+
+            // Totals
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const tax = subtotal * TAX_RATE;
+            const total = subtotal + tax;
+
+            document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+            document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+            document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
+        }
+
+        async function checkout() {
+            if (cart.length === 0) return;
+
+            const btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Processing...';
+
+            try {
+                const res = await fetch('/pos/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cart: cart.map(i => ({ productId: i.id, qty: i.qty }))
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showReceipt(data.sale);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Failed: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💳 Pay Now';
+            }
+        }
+
+        function showReceipt(sale) {
+            const html = `
+                ${sale.items.map(i => `
+                    <div class="receipt-line">
+                        <span>${i.productName} × ${i.qty}</span>
+                        <span>$${parseFloat(i.total).toFixed(2)}</span>
+                    </div>
+                `).join('')}
+                <div class="receipt-line">
+                    <span>Subtotal</span>
+                    <span>$${sale.subtotal}</span>
+                </div>
+                <div class="receipt-line">
+                    <span>Tax</span>
+                    <span>$${sale.tax}</span>
+                </div>
+                <div class="receipt-line receipt-total">
+                    <span>Total Paid</span>
+                    <span>$${sale.grandTotal}</span>
+                </div>
+            `;
+
+            document.getElementById('receiptContent').innerHTML = html;
+            document.getElementById('receiptModal').showModal();
+            cart = [];
+            renderCart();
+        }
+
+        function newSale() {
+            document.getElementById('receiptModal').close();
+            window.location.reload();
+        }
+    </script>
+</body>
+
+</html>
