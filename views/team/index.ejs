@@ -1,0 +1,350 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>👥 Team Members</h1>
+            <p>Manage your shop's team and invite new members</p>
+        </div>
+        <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openInviteModal()">
+                ➕ Invite Member
+            </button>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (success) { %>
+        <div class="alert alert-success">
+            ✓ <%= success %>
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+        <% } %>
+
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    ✗ <%= error %>
+                        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+                <% } %>
+
+                    <!-- Team Members Table -->
+                    <div class="card">
+                        <div class="card-body">
+                            <% if (team.length===0) { %>
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">👥</div>
+                                    <h3>No team members yet</h3>
+                                    <p>Invite your first team member to get started</p>
+                                </div>
+                                <% } else { %>
+                                    <table class="styled-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Role</th>
+                                                <th>Joined</th>
+                                                <th class="text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% team.forEach(member=> { %>
+                                                <tr>
+                                                    <td>
+                                                        <div class="member-cell">
+                                                            <div class="member-avatar">
+                                                                <%= member.email.charAt(0).toUpperCase() %>
+                                                            </div>
+                                                            <div class="member-info">
+                                                                <span class="member-email">
+                                                                    <%= member.email %>
+                                                                </span>
+                                                                <% if (member.id===currentUserId) { %>
+                                                                    <span
+                                                                        class="badge badge-primary badge-sm">You</span>
+                                                                    <% } %>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="role-cell">
+                                                            <% if (member.role==='owner' ) { %>
+                                                                <span class="badge badge-success">👑 Owner</span>
+                                                                <% } else if (member.role==='manager' ) { %>
+                                                                    <span class="badge badge-info">👔 Manager</span>
+                                                                    <% if (member.id !==currentUserId) { %>
+                                                                        <form action="/team/role/<%= member.id %>"
+                                                                            method="POST" style="display: inline;">
+                                                                            <input type="hidden" name="newRole"
+                                                                                value="staff">
+                                                                            <button type="submit"
+                                                                                class="btn-role-change btn-demote"
+                                                                                title="Demote to Staff">
+                                                                                ⬇ Demote
+                                                                            </button>
+                                                                        </form>
+                                                                        <% } %>
+                                                                            <% } else { %>
+                                                                                <span class="badge badge-secondary">👤
+                                                                                    Staff</span>
+                                                                                <% if (member.id !==currentUserId) { %>
+                                                                                    <form
+                                                                                        action="/team/role/<%= member.id %>"
+                                                                                        method="POST"
+                                                                                        style="display: inline;">
+                                                                                        <input type="hidden"
+                                                                                            name="newRole"
+                                                                                            value="manager">
+                                                                                        <button type="submit"
+                                                                                            class="btn-role-change btn-promote"
+                                                                                            title="Promote to Manager">
+                                                                                            ⬆ Promote
+                                                                                        </button>
+                                                                                    </form>
+                                                                                    <% } %>
+                                                                                        <% } %>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="text-muted">
+                                                            <%= new Date(member.created_at).toLocaleDateString('en-US',
+                                                                { year: 'numeric' , month: 'short' , day: 'numeric' })
+                                                                %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-right">
+                                                        <% if (member.role !=='owner' && member.id !==currentUserId) {
+                                                            %>
+                                                            <form action="/team/delete/<%= member.id %>" method="POST"
+                                                                style="display: inline;"
+                                                                onsubmit="return confirm('Remove <%= member.email %> from the team?')">
+                                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                                    title="Remove">
+                                                                    🗑️ Remove
+                                                                </button>
+                                                            </form>
+                                                            <% } else { %>
+                                                                <span class="text-muted">—</span>
+                                                                <% } %>
+                                                    </td>
+                                                </tr>
+                                                <% }); %>
+                                        </tbody>
+                                    </table>
+                                    <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Invite Member Modal -->
+                    <dialog id="inviteModal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>➕ Invite New Member</h3>
+                                <button class="modal-close" onclick="closeInviteModal()">×</button>
+                            </div>
+                            <form action="/team/invite" method="POST">
+                                <div class="modal-body">
+                                    <p class="text-muted mb-4">New members will receive a default password:
+                                        <strong>Welcome123</strong>
+                                    </p>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Email Address <span class="required">*</span></label>
+                                        <input type="email" name="email" class="form-input" required
+                                            placeholder="e.g., john@example.com">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Role <span class="required">*</span></label>
+                                        <select name="role" class="form-select" required>
+                                            <option value="">-- Select Role --</option>
+                                            <option value="manager">👔 Manager (Can edit inventory)</option>
+                                            <option value="staff">👤 Staff (Read-only / View)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        onclick="closeInviteModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">✓ Send Invitation</button>
+                                </div>
+                            </form>
+                        </div>
+                    </dialog>
+
+                    <style>
+                        .member-cell {
+                            display: flex;
+                            align-items: center;
+                            gap: var(--space-3);
+                        }
+
+                        .role-cell {
+                            display: flex;
+                            align-items: center;
+                            gap: var(--space-2);
+                            flex-wrap: wrap;
+                        }
+
+                        .btn-role-change {
+                            font-size: 0.7rem;
+                            padding: 3px 8px;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: 500;
+                            transition: all 0.2s ease;
+                        }
+
+                        .btn-promote {
+                            background: #DEF7EC;
+                            color: #03543F;
+                        }
+
+                        .btn-promote:hover {
+                            background: #03543F;
+                            color: white;
+                        }
+
+                        .btn-demote {
+                            background: #FEF3C7;
+                            color: #92400E;
+                        }
+
+                        .btn-demote:hover {
+                            background: #92400E;
+                            color: white;
+                        }
+
+                        .member-avatar {
+                            width: 40px;
+                            height: 40px;
+                            background: linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-weight: 700;
+                            font-size: 1rem;
+                            flex-shrink: 0;
+                        }
+
+                        .member-info {
+                            display: flex;
+                            align-items: center;
+                            gap: var(--space-2);
+                        }
+
+                        .member-email {
+                            font-weight: 500;
+                            color: var(--text-primary);
+                        }
+
+                        .badge-sm {
+                            font-size: 0.65rem;
+                            padding: 2px 6px;
+                        }
+
+                        .badge-info {
+                            background-color: #3B82F6;
+                            color: white;
+                        }
+
+                        .modal {
+                            border: none;
+                            border-radius: var(--radius-lg);
+                            padding: 0;
+                            max-width: 500px;
+                            width: 90%;
+                            box-shadow: var(--shadow-xl);
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            margin: 0;
+                        }
+
+                        .modal::backdrop {
+                            background: rgba(0, 0, 0, 0.5);
+                        }
+
+                        .modal-content {
+                            background: white;
+                            border-radius: var(--radius-lg);
+                        }
+
+                        .modal-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: var(--space-5);
+                            border-bottom: 1px solid var(--border-color);
+                        }
+
+                        .modal-header h3 {
+                            margin: 0;
+                        }
+
+                        .modal-close {
+                            background: none;
+                            border: none;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            color: var(--text-muted);
+                            line-height: 1;
+                        }
+
+                        .modal-close:hover {
+                            color: var(--text-primary);
+                        }
+
+                        .modal-body {
+                            padding: var(--space-5);
+                        }
+
+                        .modal-footer {
+                            display: flex;
+                            justify-content: flex-end;
+                            gap: var(--space-3);
+                            padding: var(--space-5);
+                            border-top: 1px solid var(--border-color);
+                        }
+
+                        .empty-state {
+                            text-align: center;
+                            padding: var(--space-12);
+                        }
+
+                        .empty-state-icon {
+                            font-size: 3rem;
+                            margin-bottom: var(--space-4);
+                        }
+
+                        .empty-state h3 {
+                            margin-bottom: var(--space-2);
+                        }
+
+                        .empty-state p {
+                            color: var(--text-muted);
+                        }
+                    </style>
+
+                    <script>
+                        function openInviteModal() {
+                            document.getElementById('inviteModal').showModal();
+                        }
+
+                        function closeInviteModal() {
+                            document.getElementById('inviteModal').close();
+                        }
+
+                        // Close modal when clicking outside
+                        document.getElementById('inviteModal')?.addEventListener('click', function (e) {
+                            if (e.target === this) {
+                                closeInviteModal();
+                            }
+                        });
+                    </script>
+
+                    <%- include('../partials/footer') %>
