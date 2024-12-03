@@ -1,0 +1,210 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>⚙️ Settings</h1>
+            <p>Manage your shop profile and account security</p>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (success) { %>
+        <div class="alert alert-success">
+            ✓ <%= success %>
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+        <% } %>
+
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    ✗ <%= error %>
+                        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+                <% } %>
+
+                    <!-- Two Column Grid -->
+                    <div class="grid-2">
+                        <!-- Card 1: Shop Profile (Owner Only) -->
+                        <% if (typeof currentUser !=='undefined' && currentUser.role==='owner' ) { %>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>🏪 Shop Settings</h3>
+                                </div>
+                                <div class="card-body">
+                                    <form action="/settings/update-shop" method="POST">
+                                        <div class="form-group">
+                                            <label class="form-label" for="shop_name">
+                                                Shop Name <span class="required">*</span>
+                                            </label>
+                                            <input type="text" id="shop_name" name="shop_name" class="form-input"
+                                                value="<%= shop.name %>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Shop ID</label>
+                                            <input type="text" class="form-input" value="<%= shop.id %>" disabled>
+                                            <small class="text-muted">This cannot be changed</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Created</label>
+                                            <input type="text" class="form-input"
+                                                value="<%= new Date(shop.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>"
+                                                disabled>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary">
+                                            💾 Update Profile
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <% } %>
+
+                                <!-- Card 2: Security / Password -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3>🔐 <%= hasPassword ? 'Change Password' : 'Set Password' %>
+                                        </h3>
+                                        <% if (isGoogleUser && !hasPassword) { %>
+                                            <span class="badge badge-primary">Google Account</span>
+                                            <% } %>
+                                    </div>
+                                    <div class="card-body">
+                                        <% if (!hasPassword) { %>
+                                            <!-- Set Password Form (for Google users without password) -->
+                                            <div class="alert alert-info mb-4"
+                                                style="background: #EFF6FF; border: 1px solid #3B82F6; color: #1E40AF;">
+                                                ℹ️ You signed up with Google. Set a password to also login with email &
+                                                password.
+                                            </div>
+                                            <form action="/settings/set-password" method="POST">
+                                                <div class="form-group">
+                                                    <label class="form-label" for="new_password">
+                                                        New Password <span class="required">*</span>
+                                                    </label>
+                                                    <input type="password" id="new_password" name="new_password"
+                                                        class="form-input" required minlength="6"
+                                                        placeholder="At least 6 characters">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label class="form-label" for="confirm_password">
+                                                        Confirm Password <span class="required">*</span>
+                                                    </label>
+                                                    <input type="password" id="confirm_password" name="confirm_password"
+                                                        class="form-input" required minlength="6"
+                                                        placeholder="Re-enter password">
+                                                </div>
+
+                                                <button type="submit" class="btn btn-primary">
+                                                    🔑 Set Password
+                                                </button>
+                                            </form>
+                                            <% } else { %>
+                                                <!-- Change Password Form (for users with password) -->
+                                                <form action="/settings/change-password" method="POST">
+                                                    <div class="form-group">
+                                                        <label class="form-label" for="current_password">
+                                                            Current Password <span class="required">*</span>
+                                                        </label>
+                                                        <input type="password" id="current_password"
+                                                            name="current_password" class="form-input" required
+                                                            placeholder="Enter your current password">
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label class="form-label" for="new_password">
+                                                            New Password <span class="required">*</span>
+                                                        </label>
+                                                        <input type="password" id="new_password" name="new_password"
+                                                            class="form-input" required minlength="6"
+                                                            placeholder="At least 6 characters">
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label class="form-label" for="confirm_password">
+                                                            Confirm New Password <span class="required">*</span>
+                                                        </label>
+                                                        <input type="password" id="confirm_password"
+                                                            name="confirm_password" class="form-input" required
+                                                            minlength="6" placeholder="Re-enter new password">
+                                                    </div>
+
+                                                    <button type="submit" class="btn btn-danger">
+                                                        🔑 Change Password
+                                                    </button>
+                                                </form>
+                                                <% } %>
+                                    </div>
+                                </div>
+
+                                <!-- Card 3: Update Email Address -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3>📧 Update Email Address</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/settings/update-email" method="POST">
+                                            <div class="form-group">
+                                                <label class="form-label">Current Email</label>
+                                                <input type="text" class="form-input" value="<%= currentUser.email %>"
+                                                    disabled>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label" for="new_email">
+                                                    New Email Address <span class="required">*</span>
+                                                </label>
+                                                <input type="email" id="new_email" name="new_email" class="form-input"
+                                                    required placeholder="Enter new email address">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label" for="email_password">
+                                                    Confirm Password <span class="required">*</span>
+                                                </label>
+                                                <input type="password" id="email_password" name="current_password"
+                                                    class="form-input" required
+                                                    placeholder="Enter your password to confirm">
+                                                <small class="text-muted">Required for security verification</small>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary">
+                                                📧 Update Email
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Card 4: Account Info (for non-owners) -->
+                                <% if (typeof currentUser !=='undefined' && currentUser.role !=='owner' ) { %>
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h3>👤 Account Info</h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                <label class="form-label">Email</label>
+                                                <input type="text" class="form-input" value="<%= currentUser.email %>"
+                                                    disabled>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Role</label>
+                                                <input type="text" class="form-input"
+                                                    value="<%= currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) %>"
+                                                    disabled>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Shop</label>
+                                                <input type="text" class="form-input" value="<%= shop.name %>" disabled>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                    </div>
+
+                    <%- include('../partials/footer') %>
