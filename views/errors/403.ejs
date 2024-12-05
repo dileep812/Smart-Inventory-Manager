@@ -1,0 +1,64 @@
+<%- include('../partials/header') %>
+
+    <main class="error-page">
+        <div class="error-container">
+            <div class="error-icon">🚫</div>
+            <h1>403</h1>
+            <h2>Access Forbidden</h2>
+            <p class="error-message">
+                <%= typeof message !=='undefined' && message ? message
+                    : 'You do not have permission to perform this action.' %>
+            </p>
+            <a href="/dashboard" class="btn btn-primary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </main>
+
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            padding: var(--space-6);
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: var(--space-12);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .error-container h1 {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--danger);
+            margin: 0;
+            line-height: 1;
+        }
+
+        .error-container h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin: var(--space-2) 0 var(--space-4);
+        }
+
+        .error-message {
+            color: var(--text-muted);
+            margin-bottom: var(--space-6);
+            font-size: 1rem;
+        }
+    </style>
+
+    <%- include('../partials/footer') %>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <main class="error-page">
+        <div class="error-container">
+            <div class="error-icon">🔍</div>
+            <h1>404</h1>
+            <h2>Page Not Found</h2>
+            <p class="error-message">The page you are looking for does not exist.</p>
+            <a href="/dashboard" class="btn btn-primary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </main>
+
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            padding: 2rem;
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 4rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-container h1 {
+            font-size: 5rem;
+            font-weight: 800;
+            color: #3B82F6;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .error-container h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .error-message {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #3B82F6;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #2563EB;
+        }
+    </style>
+</body>
+
+</html>
