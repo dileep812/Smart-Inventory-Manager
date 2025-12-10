@@ -4,11 +4,26 @@
 -- =============================================
 
 -- Drop tables if they exist (in correct order due to foreign keys)
+-- Drop tables if they exist (in correct order due to foreign keys)
 DROP TABLE IF EXISTS stock_movements CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS shops CASCADE;
+DROP TABLE IF EXISTS session CASCADE;
+
+-- =============================================
+-- Session Table (REQUIRED for connect-pg-simple)
+-- =============================================
+CREATE TABLE session (
+    sid VARCHAR NOT NULL COLLATE "default",
+    sess JSON NOT NULL,
+    expire TIMESTAMP(6) NOT NULL
+)
+WITH (OIDS=FALSE);
+
+ALTER TABLE session ADD CONSTRAINT session_pkey PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE;
+CREATE INDEX idx_session_expire ON session (expire);
 
 -- =============================================
 -- Shops Table (ROOT ENTITY - Parent of all tables)
