@@ -73,7 +73,8 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        // Secure cookies require HTTPS. For local production testing (HTTP), we can disable it.
+        secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
 }));

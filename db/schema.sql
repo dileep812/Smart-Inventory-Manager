@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS shops CASCADE;
 DROP TABLE IF EXISTS session CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
 
 -- =============================================
 -- Session Table (REQUIRED for connect-pg-simple)

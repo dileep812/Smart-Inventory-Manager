@@ -54,106 +54,110 @@ passport.use(new LocalStrategy(
 ));
 
 // =============================================
-// Google OAuth Strategy
+// Google OAuth Strategy (Only if credentials are configured)
 // =============================================
-passport.use(new GoogleStrategy(
-    {
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL
-    },
-    async (accessToken, refreshToken, profile, done) => {
-        try {
-            const googleId = profile.id;
-            const email = profile.emails?.[0]?.value?.toLowerCase();
-            const displayName = profile.displayName || 'User';
-            const firstName = profile.name?.givenName || displayName.split(' ')[0];
-            const avatarUrl = profile.photos?.[0]?.value || null;
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(new GoogleStrategy(
+        {
+            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL: process.env.GOOGLE_CALLBACK_URL
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                const googleId = profile.id;
+                const email = profile.emails?.[0]?.value?.toLowerCase();
+                const displayName = profile.displayName || 'User';
+                const firstName = profile.name?.givenName || displayName.split(' ')[0];
+                const avatarUrl = profile.photos?.[0]?.value || null;
 
-            if (!email) {
-                return done(null, false, { message: 'No email found in Google profile' });
-            }
+                if (!email) {
+                    return done(null, false, { message: 'No email found in Google profile' });
+                }
 
-            // Scenario A: Check if user exists with this Google ID (returning user)
-            let result = await db.query(
-                `SELECT users.*, shops.name as shop_name 
+                // Scenario A: Check if user exists with this Google ID (returning user)
+                let result = await db.query(
+                    `SELECT users.*, shops.name as shop_name 
                  FROM users 
                  JOIN shops ON users.shop_id = shops.id 
                  WHERE users.google_id = $1`,
-                [googleId]
-            );
+                    [googleId]
+                );
 
-            if (result.rows.length > 0) {
-                console.log(`✓ Google user logged in: ${email}`);
-                return done(null, result.rows[0]);
-            }
+                if (result.rows.length > 0) {
+                    console.log(`✓ Google user logged in: ${email}`);
+                    return done(null, result.rows[0]);
+                }
 
-            // Scenario B: Check if user exists with this email (link accounts)
-            result = await db.query(
-                `SELECT users.*, shops.name as shop_name 
+                // Scenario B: Check if user exists with this email (link accounts)
+                result = await db.query(
+                    `SELECT users.*, shops.name as shop_name 
                  FROM users 
                  JOIN shops ON users.shop_id = shops.id 
                  WHERE users.email = $1`,
-                [email]
-            );
-
-            if (result.rows.length > 0) {
-                // Link Google account to existing user
-                await db.query(
-                    'UPDATE users SET google_id = $1, avatar_url = $2 WHERE id = $3',
-                    [googleId, avatarUrl, result.rows[0].id]
+                    [email]
                 );
-                console.log(`✓ Linked Google account to existing user: ${email}`);
-                return done(null, result.rows[0]);
-            }
 
-            // Scenario C: New user - Auto signup (create shop + user)
-            const client = await db.pool.connect();
-            try {
-                await client.query('BEGIN');
+                if (result.rows.length > 0) {
+                    // Link Google account to existing user
+                    await db.query(
+                        'UPDATE users SET google_id = $1, avatar_url = $2 WHERE id = $3',
+                        [googleId, avatarUrl, result.rows[0].id]
+                    );
+                    console.log(`✓ Linked Google account to existing user: ${email}`);
+                    return done(null, result.rows[0]);
+                }
 
-                // Step 1: Create a new Shop
-                const shopResult = await client.query(
-                    `INSERT INTO shops (name) VALUES ($1) RETURNING id`,
-                    [`${firstName}'s Shop`]
-                );
-                const shopId = shopResult.rows[0].id;
+                // Scenario C: New user - Auto signup (create shop + user)
+                const client = await db.pool.connect();
+                try {
+                    await client.query('BEGIN');
 
-                // Step 2: Create the User
-                const userResult = await client.query(
-                    `INSERT INTO users (shop_id, email, password_hash, google_id, avatar_url, role)
+                    // Step 1: Create a new Shop
+                    const shopResult = await client.query(
+                        `INSERT INTO shops (name) VALUES ($1) RETURNING id`,
+                        [`${firstName}'s Shop`]
+                    );
+                    const shopId = shopResult.rows[0].id;
+
+                    // Step 2: Create the User
+                    const userResult = await client.query(
+                        `INSERT INTO users (shop_id, email, password_hash, google_id, avatar_url, role)
                      VALUES ($1, $2, NULL, $3, $4, 'owner')
                      RETURNING *`,
-                    [shopId, email, googleId, avatarUrl]
-                );
+                        [shopId, email, googleId, avatarUrl]
+                    );
 
-                await client.query('COMMIT');
+                    await client.query('COMMIT');
 
-                // Get the full user with shop name
-                const newUser = await db.query(
-                    `SELECT users.*, shops.name as shop_name 
+                    // Get the full user with shop name
+                    const newUser = await db.query(
+                        `SELECT users.*, shops.name as shop_name 
                      FROM users 
                      JOIN shops ON users.shop_id = shops.id 
                      WHERE users.id = $1`,
-                    [userResult.rows[0].id]
-                );
+                        [userResult.rows[0].id]
+                    );
 
-                console.log(`✓ New Google user signed up: ${email} (Shop: ${firstName}'s Shop)`);
-                return done(null, newUser.rows[0]);
+                    console.log(`✓ New Google user signed up: ${email} (Shop: ${firstName}'s Shop)`);
+                    return done(null, newUser.rows[0]);
+
+                } catch (error) {
+                    await client.query('ROLLBACK');
+                    throw error;
+                } finally {
+                    client.release();
+                }
 
             } catch (error) {
-                await client.query('ROLLBACK');
-                throw error;
-            } finally {
-                client.release();
+                console.error('Google OAuth error:', error.message);
+                return done(error);
             }
-
-        } catch (error) {
-            console.error('Google OAuth error:', error.message);
-            return done(error);
         }
-    }
-));
+    ));
+} else {
+    console.warn('⚠️  Google OAuth not configured - Google login will be unavailable');
+}
 
 // =============================================
 // Serialize/Deserialize User
