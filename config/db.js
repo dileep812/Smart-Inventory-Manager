@@ -8,7 +8,9 @@ const pool = new pg.Pool({
     password: process.env.DB_PASSWORD,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
+    connectionTimeoutMillis: 2000,
+    // SSL is usually required for production cloud databases (Vercel/Neon/Supabase)
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 pool.on('error', (err) => {
