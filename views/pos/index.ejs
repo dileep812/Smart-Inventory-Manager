@@ -578,11 +578,136 @@
             padding-top: 0.5rem;
             margin-top: 0.5rem;
         }
+
+        /* ========================================
+           MOBILE RESPONSIVE STYLES
+           ======================================== */
+        @media (max-width: 768px) {
+            .pos-container {
+                flex-direction: column;
+            }
+
+            .pos-products {
+                flex: none;
+                height: 100%;
+                min-height: 60vh;
+            }
+
+            .pos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 0.75rem;
+                padding: 0 1rem 1rem;
+            }
+
+            .pos-search-sticky {
+                padding: 0.75rem 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .pos-product-count {
+                align-self: flex-start;
+            }
+
+            /* Cart - Fixed at bottom on mobile */
+            .pos-cart {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                max-height: 70vh;
+                z-index: 100;
+                transform: translateY(calc(100% - 70px));
+                transition: transform 0.3s ease;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+                border-radius: 20px 20px 0 0;
+            }
+
+            .pos-cart.expanded {
+                transform: translateY(0);
+            }
+
+            .pos-cart-header {
+                cursor: pointer;
+                padding: 1rem 1.25rem;
+            }
+
+            .pos-cart-header::after {
+                content: '⬆️';
+                margin-left: auto;
+            }
+
+            .pos-cart.expanded .pos-cart-header::after {
+                content: '⬇️';
+            }
+
+            .pos-card-body {
+                padding: 0.5rem;
+            }
+
+            .pos-card-name {
+                font-size: 0.8rem;
+            }
+
+            .pos-card-meta {
+                font-size: 0.7rem;
+            }
+
+            /* Floating cart badge on mobile */
+            .mobile-cart-badge {
+                display: flex;
+                position: fixed;
+                bottom: 80px;
+                right: 16px;
+                background: var(--primary);
+                color: white;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+                z-index: 99;
+                cursor: pointer;
+            }
+
+            .mobile-cart-badge .badge-count {
+                position: absolute;
+                top: -4px;
+                right: -4px;
+                background: var(--danger);
+                color: white;
+                font-size: 0.7rem;
+                font-weight: 700;
+                min-width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Hide mobile cart badge on desktop */
+        .mobile-cart-badge {
+            display: none;
+        }
     </style>
 
     <script>
         const TAX_RATE = <%= taxRate %> / 100;
         let cart = [];
+
+        // Mobile cart toggle
+        const cartEl = document.querySelector('.pos-cart');
+        const cartHeader = document.querySelector('.pos-cart-header');
+        if (cartHeader && cartEl) {
+            cartHeader.addEventListener('click', () => {
+                cartEl.classList.toggle('expanded');
+            });
+        }
 
         // Search
         document.getElementById('productSearch').addEventListener('input', function (e) {
