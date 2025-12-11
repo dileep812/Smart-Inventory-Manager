@@ -56,6 +56,10 @@ app.use(express.json());
 // Method override for PUT and DELETE requests from forms
 app.use(methodOverride('_method'));
 
+// Favicon handlers - prevent 404 errors
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/favicon.png', (req, res) => res.status(204).end());
+
 // Serve static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
