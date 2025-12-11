@@ -3266,7 +3266,10 @@ select.form-input:hover {
     justify-content: center;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
+    /* Allow vertical scrolling */
+    padding: 2rem 0;
+    /* Add padding top/bottom for breathing room */
 }
 
 /* Animated background shapes */
