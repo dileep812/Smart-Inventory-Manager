@@ -19,14 +19,15 @@ const dbConfig = process.env.DATABASE_URL
 
 const pool = new pg.Pool({
     ...dbConfig,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
-    // SSL logic is now handled in dbConfig
+    max: 10,                          // Maximum number of clients in the pool
+    idleTimeoutMillis: 30000,         // Close idle clients after 30s
+    connectionTimeoutMillis: 10000,   // Wait up to 10s for connection (increased for Neon)
+    keepAlive: true,                  // Enable TCP keep-alive
+    keepAliveInitialDelayMillis: 10000 // Start keep-alive after 10s
 });
 
 pool.on('error', (err) => {
-    console.error('Database error:', err.message);
+    console.error('💥 Unexpected database error:', err.message);
 });
 
 const query = (text, params) => pool.query(text, params);
