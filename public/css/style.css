@@ -407,6 +407,45 @@ code {
     gap: var(--space-4);
 }
 
+/* Mobile Menu Toggle Button (Hamburger) */
+.mobile-menu-toggle {
+    display: none;
+    /* Hidden on desktop */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    flex-direction: column;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.mobile-menu-toggle:hover {
+    background: var(--bg-hover);
+}
+
+.mobile-menu-toggle span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Show on mobile */
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: flex;
+    }
+}
+
 .topbar-breadcrumb {
     display: flex;
     align-items: center;
