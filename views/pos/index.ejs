@@ -631,15 +631,21 @@
             .pos-cart-header {
                 cursor: pointer;
                 padding: 1rem 1.25rem;
+                position: relative;
             }
 
-            .pos-cart-header::after {
-                content: '⬆️';
-                margin-left: auto;
+            .pos-cart-header h2::after {
+                content: ' ⬆️';
+                font-size: 0.8rem;
             }
 
-            .pos-cart.expanded .pos-cart-header::after {
-                content: '⬇️';
+            .pos-cart.expanded .pos-cart-header h2::after {
+                content: ' ⬇️';
+            }
+
+            .pos-clear-btn {
+                z-index: 10;
+                position: relative;
             }
 
             .pos-card-body {
@@ -875,6 +881,23 @@
         function newSale() {
             document.getElementById('receiptModal').close();
             window.location.reload();
+        }
+
+        // Mobile sidebar toggle (since POS doesn't use main.js)
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.querySelector('.mobile-menu-toggle');
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+            // Close sidebar when clicking outside
+            document.addEventListener('click', (e) => {
+                if (sidebar.classList.contains('open') &&
+                    !sidebar.contains(e.target) &&
+                    !menuToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            });
         }
     </script>
 </body>
