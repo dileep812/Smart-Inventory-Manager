@@ -62,6 +62,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ======================
 // Session Configuration
 // ======================
+
+// Trust proxy - CRITICAL for Vercel/serverless
+// SSL termination happens at Vercel edge, not in Node app
+app.set('trust proxy', 1);
+
 const PgSession = connectPgSimple(session);
 
 app.use(session({
@@ -76,9 +81,10 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        // Secure cookies require HTTPS. For local production testing (HTTP), we can disable it.
-        secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        secure: process.env.NODE_ENV === 'production',           // HTTPS required in production
+        httpOnly: true,                                          // Prevent XSS attacks
+        maxAge: 30 * 24 * 60 * 60 * 1000,                       // 30 days
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Allow cross-site for OAuth
     }
 }));
 
