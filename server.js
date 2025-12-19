@@ -75,7 +75,7 @@ const PgSession = connectPgSimple(session);
 
 app.use(session({
     store: new PgSession({
-        pool: db.pool,                     // Use existing db pool
+        pool: db,                     // Use existing db pool
         tableName: 'session',              // Session table name
         createTableIfMissing: true,        // Auto-create session table if it doesn't exist
         pruneSessionInterval: 60 * 15,     // Prune expired sessions every 15 minutes
